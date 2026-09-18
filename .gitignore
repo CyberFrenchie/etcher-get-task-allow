@@ -1,0 +1,7 @@
+# never commit the vendor's binary, the compiled tools, or a mounted copy
+balenaEtcher.app/
+*.dmg
+*.xapk
+*.dylib
+task_probe
+*.o
