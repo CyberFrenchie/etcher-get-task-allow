@@ -1,26 +1,28 @@
-> [!WARNING]
-> **Under coordinated disclosure. Do not make this repository public.**
-> balena confirmed the report on 18 September 2026 and asked that disclosure be
-> held until a patched release ships. This repository is written to be
-> publishable, and stays private until they confirm the fix has landed.
+# balenaEtcher for macOS shipped `get-task-allow` in notarised release builds
 
-# balenaEtcher for macOS ships `get-task-allow` in a notarised release build
+Hardened-runtime, notarised releases of balenaEtcher from 1.18.13 through 2.1.6
+were signed with `com.apple.security.get-task-allow`. Any process running as the
+same user could therefore take the application's task port and read or write its
+memory, and could load unsigned code into it. The same entitlements were present
+on the helper binary the application runs under `sudo` to write to disk.
 
-A hardened-runtime, notarised release of balenaEtcher is signed with
-`com.apple.security.get-task-allow`. Any process running as the same user can
-therefore take the application's task port and read or write its memory, and can
-load unsigned code into it. The same entitlements are present on the helper
-binary the application runs under `sudo` to write to disk.
+balena fixed the issue in 2.1.7 and published
+[GHSA-2hc8-w9rq-wff2](https://github.com/balena-io/etcher/security/advisories/GHSA-2hc8-w9rq-wff2)
+on 21 September 2026.
 
 | | |
 |---|---|
 | **Product** | balenaEtcher for macOS |
 | **Version tested** | 2.1.6 (`balenaEtcher-2.1.6-arm64.dmg`) |
+| **Affected versions** | 1.18.13 through 2.1.6 |
+| **Patched version** | 2.1.7 |
 | **Bundle** | `io.balena.etcher` |
 | **Signature** | `Developer ID Application: Balena Ltd (66H43P8FRG)` |
 | **Hardened runtime** | Enabled — `CodeDirectory flags=0x10000(runtime)` |
 | **Notarisation** | Accepted — `spctl -a -vvv -t exec` reports `Notarized Developer ID` |
-| **Status** | Confirmed by vendor, fix in progress |
+| **Advisory** | [GHSA-2hc8-w9rq-wff2](https://github.com/balena-io/etcher/security/advisories/GHSA-2hc8-w9rq-wff2) |
+| **Severity** | High, CVSS 3.1: 7.5 |
+| **Status** | Fixed and publicly disclosed |
 
 ## Background
 
@@ -142,11 +144,15 @@ demonstrated**.
 Assessed as local privilege escalation potential requiring user interaction.
 Severity rating was left to the vendor.
 
-## Remediation
+## Vendor fix
 
-Remove `com.apple.security.get-task-allow` from the release entitlements for both
-the application and `etcher-util`, and review whether the remaining four are
-required in a shipping build.
+In 2.1.7, balena split the entitlements by binary. Local inspection of the
+patched release confirms that `get-task-allow`, disabled library validation,
+DYLD environment-variable support, and disabled executable-page protection are
+absent from the main application. The privileged disk-write helper has an empty
+entitlement dictionary. The main application retains the entitlements needed by
+its Electron and device-access functionality, including JIT and unsigned
+executable-memory support.
 
 A useful CI check is to fail the pipeline when a release artefact carries
 `get-task-allow`:
@@ -175,8 +181,8 @@ differently.
 | 2026-09-17 | Reported to `security@balena.io` with evidence and PoC source |
 | 2026-09-17 | Acknowledged by balena Security |
 | 2026-09-18 | **Confirmed valid.** Vendor requested disclosure be held pending a patched release |
-| — | Patched release |
-| — | Public disclosure and security acknowledgement |
+| 2026-09-18 | Fixed in balenaEtcher 2.1.7 and patched release published |
+| 2026-09-21 | [GHSA-2hc8-w9rq-wff2](https://github.com/balena-io/etcher/security/advisories/GHSA-2hc8-w9rq-wff2) published; High severity, CVSS 3.1 score 7.5 |
 
 ## Scope and conduct
 
